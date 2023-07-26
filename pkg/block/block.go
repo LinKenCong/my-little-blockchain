@@ -13,7 +13,7 @@ import (
 
 	Index		是数据记录在区块链中的位置
 	Timestamp	自动确定，是数据写入的时间
-	KC			是区块链代币 KyrieCoin
+	BPM			是区块链BPM
 	Hash		是代表此数据记录的 SHA256 标识符
 	PrevHash	是链中前一条记录的 SHA256 标识符
 */
@@ -54,7 +54,7 @@ func CalculateHash(block Block) string {
 	return hex.EncodeToString(hashed)
 }
 
-func GenerateBlock(oldBlock Block, BPM int) Block {
+func GenerateBlock(oldBlock Block, BPM int) (Block, error) {
 	var newBlock Block
 	t := time.Now()
 
@@ -64,5 +64,12 @@ func GenerateBlock(oldBlock Block, BPM int) Block {
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = CalculateHash(newBlock)
 
-	return newBlock
+	return newBlock, nil
+}
+
+// make sure the chain we're checking is longer than the current blockchain
+func ReplaceChain(newBlocks []Block) {
+	if len(newBlocks) > len(Blockchain) {
+		Blockchain = newBlocks
+	}
 }

@@ -1,8 +1,9 @@
-package http
+package handles
 
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/LinKenCong/my-little-blockchain/pkg/block"
@@ -13,7 +14,7 @@ type Message struct {
 	BPM int
 }
 
-func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
+func HandleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	bytes, err := json.MarshalIndent(block.Blockchain, "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -22,7 +23,7 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(bytes))
 }
 
-func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
+func HandleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var msg Message
 
@@ -35,7 +36,11 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 
 	block.Mutex.Lock()
 	prevBlock := block.Blockchain[len(block.Blockchain)-1]
-	newBlock := block.GenerateBlock(prevBlock, msg.BPM)
+	newBlock, err := block.GenerateBlock(prevBlock, msg.BPM)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	if block.IsBlockValid(newBlock, prevBlock) {
 		block.Blockchain = append(block.Blockchain, newBlock)
