@@ -3,26 +3,36 @@ package block
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
+// difficulty is a constant that defines the number of 0s we want leading the hash. The more zeros we have to get, the harder it is to find the correct hash.
+const difficulty = 1
+
 /*
 # Block struct
 
-	Index		是数据记录在区块链中的位置
-	Timestamp	自动确定，是数据写入的时间
-	BPM			是区块链BPM
-	Hash		是代表此数据记录的 SHA256 标识符
-	PrevHash	是链中前一条记录的 SHA256 标识符
+	Index		- The position of the data record in the blockchain
+	Timestamp	- Automatically determined, it is the time when the data is written
+	BPM			- The BPM (beats per minute) in the blockchain (Like the transaction information contained in the blockchain)
+	Hash		- The SHA256 identifier representing this data record
+	PrevHash	- The SHA256 identifier of the previous record in the chain
+	Difficulty  - Mining difficulty
+	Nonce       - Random number
 */
+
 type Block struct {
-	Index     int
-	Timestamp string
-	BPM       int
-	Hash      string
-	PrevHash  string
+	Index      int
+	Timestamp  string
+	BPM        int
+	Hash       string
+	PrevHash   string
+	Difficulty int
+	Nonce      string
 }
 
 var (
@@ -46,8 +56,13 @@ func IsBlockValid(newBlock, oldBlock Block) bool {
 	return true
 }
 
+func IsHashValid(hash string, difficulty int) bool {
+	prefix := strings.Repeat("0", difficulty)
+	return strings.HasPrefix(hash, prefix)
+}
+
 func CalculateHash(block Block) string {
-	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.BPM) + block.PrevHash
+	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -63,6 +78,22 @@ func GenerateBlock(oldBlock Block, BPM int) (Block, error) {
 	newBlock.BPM = BPM
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = CalculateHash(newBlock)
+	newBlock.Difficulty = difficulty
+
+	// mining algorithm
+	for i := 0; ; i++ {
+		hex := fmt.Sprintf("%x", i)
+		newBlock.Nonce = hex
+		if !IsHashValid(CalculateHash(newBlock), newBlock.Difficulty) {
+			fmt.Println(CalculateHash(newBlock), "do more work!")
+			time.Sleep(time.Second)
+			continue
+		} else {
+			fmt.Println(CalculateHash(newBlock), "wrok done!")
+			newBlock.Hash = CalculateHash(newBlock)
+			break
+		}
+	}
 
 	return newBlock, nil
 }

@@ -12,10 +12,10 @@ import (
 
 func Run() error {
 	mux := makeMuxRouter()
-	httpPort := os.Getenv("PORT")
-	log.Println("HTTP Server Listening on port :", httpPort)
+	httpAddr := os.Getenv("PORT")
+	log.Println("Listening on ", os.Getenv("PORT"))
 	s := &http.Server{
-		Addr:           ":" + httpPort,
+		Addr:           ":" + httpAddr,
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
