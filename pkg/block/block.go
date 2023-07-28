@@ -4,14 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-)
 
-// difficulty is a constant that defines the number of 0s we want leading the hash. The more zeros we have to get, the harder it is to find the correct hash.
-const difficulty = 1
+	"github.com/davecgh/go-spew/spew"
+)
 
 /*
 # Block struct
@@ -24,7 +24,6 @@ const difficulty = 1
 	Difficulty  - Mining difficulty
 	Nonce       - Random number
 */
-
 type Block struct {
 	Index      int
 	Timestamp  string
@@ -39,6 +38,23 @@ var (
 	Blockchain []Block
 	Mutex      = &sync.Mutex{}
 )
+
+// init create genesis block
+func init() {
+	t := time.Now()
+	genesisBlock := Block{Index: 0, Timestamp: t.String(), BPM: 0, Hash: "", PrevHash: ""}
+	spew.Dump(genesisBlock)
+	Blockchain = append(Blockchain, genesisBlock)
+}
+
+// difficulty is a constant that defines the number of 0s we want leading the hash. The more zeros we have to get, the harder it is to find the correct hash.
+func getDifficulty() int {
+	difficulty, err := strconv.Atoi(os.Getenv("Difficulty"))
+	if err != nil {
+		difficulty = 0
+	}
+	return difficulty
+}
 
 func IsBlockValid(newBlock, oldBlock Block) bool {
 	if oldBlock.Index+1 != newBlock.Index {
@@ -78,7 +94,7 @@ func GenerateBlock(oldBlock Block, BPM int) (Block, error) {
 	newBlock.BPM = BPM
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = CalculateHash(newBlock)
-	newBlock.Difficulty = difficulty
+	newBlock.Difficulty = getDifficulty()
 
 	// mining algorithm
 	for i := 0; ; i++ {
